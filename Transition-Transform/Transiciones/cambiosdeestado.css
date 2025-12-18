@@ -1,0 +1,35 @@
+/* Estilo base del botón */
+.button {
+    padding: 15px 30px;
+    font-size: 50px;
+    color: white;
+    background-color: blue; /* Azul claro */
+    border: none;
+    border-radius: 5px;
+    text-align: center;
+    cursor: pointer;
+}
+
+/* Efecto hover: Cambia el color de fondo y aumenta el tamaño del texto */
+.button:hover {
+    background-color: darkblue; /* Azul más oscuro */
+    font-size: 60px;            /* Aumenta ligeramente el tamaño del texto */
+}
+
+/* Efecto active: Mueve el botón hacia abajo al hacer clic */
+.button:active {
+    background-color: blueviolet; /* Violeta */
+    color: yellow;
+}
+
+/* 📱 MEDIA QUERY: cuando la pantalla sea menor a 600px */
+@media (max-width: 600px) {
+    .button {
+        font-size: 20px;   /* Reduce el tamaño del texto */
+        padding: 12px 25px; /* Opcional: también adapta el padding */
+    }
+
+    .button:hover {
+        font-size: 25px; /* Hover más pequeño en móviles */
+    }
+}

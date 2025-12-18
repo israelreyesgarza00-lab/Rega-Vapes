@@ -1,0 +1,85 @@
+/* Header */
+header {
+    background-color: #3498db;
+    color: #fff;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;   /* Sticky position */
+    top: 0;
+    z-index: 1000; /* Asegura que el header esté por encima de otros elementos */
+  }
+  
+/* Footer */
+  footer {
+    background-color: #3498db;
+    color: #fff;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+/* Main */
+  main {
+    display: flex;            /* Utiliza Flexbox */
+    justify-content: center;  /* Centra horizontalmente */
+    align-items: center;      /* Centra verticalmente */
+    height: 100vh;            /* Asegura que el main ocupe toda la altura de la pantalla */
+    background-color: #f9f9f9;
+    padding: 20px;
+  }
+  
+.contenido {
+    text-align: center;
+    max-width: 800px;
+  }
+.contenido p {
+    font-size: 18px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  
+ /* Imagen y caja de color */
+article.media {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 20px;
+  }
+  
+article.media img {
+    max-width: 50%;
+    height: auto;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+  }
+  
+article.media .caja {
+    width: 20%;
+    height: auto;
+    background-color: #e67e22;
+    border-radius: 8px; 
+    display: flex;
+    justify-content: center; /* Centra horizontalmente */
+    align-items: center;    /* Centra verticalmente */
+    color: #fff;            /* Cambia el color del texto para contraste */
+    font-size: 18px;        /* Ajusta el tamaño del texto */
+    text-align: center;     /* Centra el texto en caso de varias líneas */
+  }
+  
+nav ul {
+    list-style: none; /* Quita los marcadores de la lista */
+    display: flex; /* Hace que los enlaces estén horizontales en una fila */
+    padding: 0;
+    margin: 0;
+  }
+  nav li {
+    margin-right: 20px; /* Espacio entre enlaces */
+  }
+  
+  a {
+    color: #ddd;
+    text-decoration: none; /* Evita que se marque subrayado */
+  }

@@ -1,0 +1,39 @@
+.caja{
+    width: 100px;
+    height: 100px;
+    color: #FFF;
+    text-align: center;
+    line-height: 50px;
+    margin: 10px;
+    font-size: 20px;
+    font-family: Arial;
+  }
+
+#contenedor-row{
+    display: flex;
+    flex-direction: row;
+  }
+#contenedor-row div{
+    background-color: #9B59B6;
+  }
+  #contenedor-row-reverse{
+    display: flex;
+    flex-direction: row-reverse;
+  }
+  #contenedor-row-reverse div{
+    background-color: #C0392B;
+  }
+  #contenedor-column{
+    display: flex;
+    flex-direction: column;
+  }
+  #contenedor-column div{
+    background-color: #3498DB;
+  }
+  #contenedor-column-reverse{
+    display: flex;
+    flex-direction: column-reverse;
+  }
+  #contenedor-column-reverse div{
+    background-color: #17A589;
+  }

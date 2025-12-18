@@ -1,0 +1,49 @@
+
+<html>
+<head>
+<title>Align Items</title> <meta charset="utf-8">
+<link rel="stylesheet" type="text/css" href="flex-align-items.css">
+</head>
+<body>
+  <h2>Este es el valor por defecto.<br>Los elementos se estiran para ocupar todo el alto (o ancho) disponible.<br>
+No funciona si tienen height/width fijo.<br>align-items: stretch;</h2>
+  <div id="contenedor-stretch">
+    <div class="caja">1</div>
+    <div class="caja">2</div>
+    <div class="caja">3</div>
+    <div class="caja">4</div>
+  </div>
+  
+  <h2>Los elementos se alinean al inicio del eje secundario.<br>align-items: flex-start;</h2>
+  <div id="contenedor-flex-start">
+    <div class="caja">1</div>
+    <div class="caja">2</div>
+    <div class="caja">3</div>
+    <div class="caja">4</div>
+  </div>
+  
+  <h2>Los elementos se alinean al final del eje secundario.<br>align-items: flex-end;</h2>
+  <div id="contenedor-flex-end">
+    <div class="caja">1</div>
+    <div class="caja">2</div>
+    <div class="caja">3</div>
+    <div class="caja">4</div>
+  </div>
+  
+  <h2>Los elementos se centran verticalmente (o horizontalmente si column).<br>align-items: center;</h2>
+  <div id="contenedor-center">
+    <div class="caja">1</div>
+    <div class="caja">2</div>
+    <div class="caja">3</div>
+    <div class="caja">4</div>
+  </div>
+  
+  <h2>Los textos dentro de los elementos se alinean por la línea base de la tipografía.<br>align-items: baseline;</h2>
+  <div id="contenedor-baseline">
+    <div class="caja"><h1>1</h1></div>
+    <div class="caja">2</div>
+    <div class="caja"><h6>3</h6></div>
+    <div class="caja">4</div>
+  </div>
+</body>
+</html>

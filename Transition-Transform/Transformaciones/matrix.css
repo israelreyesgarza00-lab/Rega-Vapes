@@ -1,0 +1,25 @@
+    .caja {
+        width: 100px;
+        height: 100px;
+        background-color: lightblue;
+        margin: 50px auto;
+        text-align: center;
+        line-height: 100px;
+        font-family: Arial, sans-serif;
+        color: white;
+      }
+  
+      /* Aplicación de la transformación usando matrix() */
+      .caja:hover {
+        transform: matrix(1.5, 0.5, -0.5, 1.5, 100, 100); /* Combina inclinación, traslación y escalado */
+        background-color: lightcoral; /* Cambia el fondo para destacar el efecto */
+        transition: transform 0.3s ease; 
+      }
+
+/*
+transform: matrix(a, b, c, d, e, f);
+
+a y d: Escalan el elemento en los ejes X e Y respectivamente.
+b y c: Inclinaciones en los ejes Y y X.
+e y f: Traslaciones en los ejes X e Y (en píxeles).
+*/

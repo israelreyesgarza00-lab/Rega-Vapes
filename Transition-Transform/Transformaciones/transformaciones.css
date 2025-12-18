@@ -1,0 +1,89 @@
+.container {
+    display: flex;            /* Utiliza Flexbox para organizar los elementos hijos. */
+    flex-wrap: wrap;          /* Permite que las cajas se muevan a una nueva fila si no caben en una sola. */
+    justify-content: center;  /* Centra las cajas horizontalmente dentro del contenedor. */
+}
+
+/* Estilo base para las cajas */
+.caja {
+  width: 180px;               /* Ancho fijo de la caja */
+  height: 180px;              /* Altura fija de la caja */
+  color: #FFF;                /* Color del texto en blanco */
+  text-align: center;         /* Centra el texto horizontalmente */
+  line-height: 180px;         /* Centra el texto verticalmente al igualar la altura de línea con la altura de la caja */
+  margin: 15px;               /* Espacio entre las cajas */
+  font-size: 18px;            /* Tamaño del texto */
+  font-family: Arial;         /* Fuente utilizada */
+}
+
+/* Caja 1: Escalado al pasar el cursor */
+.caja1 {
+  background-color: #C0392B;  /* Fondo rojo oscuro */
+  transition: 1s linear;      /* Aplica una transición suave de 1 segundo */
+}
+.caja1:active {
+  transform: scale(0.5);         /* Escala la caja al 50% */
+}
+
+/* Caja 2: Rotación completa al pasar el cursor */
+.caja2 {
+  background-color: #30B037;  /* Fondo verde */
+  transition: 1s linear;      /* Transición suave de 1 segundo */
+}
+.caja2:active {
+  transform: rotate(720deg);  /* Rota la caja 360 grados */
+}
+
+/* Caja 3: Traslación horizontal al pasar el cursor */
+.caja3 {
+  transition: 1s linear;      /* Transición suave de 1 segundo */
+  background-color: #E67E22; /* Fondo naranja */
+}
+.caja3:active {
+  transform: translateX(20px); /* Mueve la caja 20px hacia la derecha */
+}
+
+/* Caja 4: Traslación vertical al pasar el cursor */
+.caja4 {
+  transition: 1s linear;      /* Transición suave de 1 segundo */
+  background-color: #3F51B5; /* Fondo azul oscuro */
+}
+.caja4:active {
+  transform: translateY(20px); /* Mueve la caja 20px hacia abajo */
+}
+
+/* Caja 5: Rotación 3D en el eje X con perspectiva */
+.caja5 {
+  transition: 1s linear;      /* Transición suave de 1 segundo */
+  background-color: #F1C40F; /* Fondo amarillo */
+}
+.caja5:active {
+  transform: perspective(150px) rotateX(45deg); /* Aplica perspectiva 3D y rota 45 grados en el eje X */
+}
+
+/* Caja 6: Rotación 3D en el eje Y con perspectiva */
+.caja6 {
+  transition: 1s linear;      /* Transición suave de 1 segundo */
+  background-color: #9B59B6; /* Fondo morado */
+}
+.caja6:active {
+  transform: perspective(150px) rotateY(45deg); /* Aplica perspectiva 3D y rota 45 grados en el eje Y */
+}
+
+/* Caja 7: Inclinación al pasar el cursor */
+.caja7 {
+  background-color: #3498DB;  /* Fondo azul claro */
+  transition: 1s linear;      /* Transición suave de 1 segundo */
+}
+.caja7:active {
+  transform: skew(10deg);     /* Inclina la caja 10 grados en ambos ejes */
+}
+
+/* Caja 8: Transformación usando una matriz */
+.caja8 {
+  transition: 1s linear;      /* Transición suave de 1 segundo */
+  background-color: black;    /* Fondo negro */
+}
+.caja8:active{
+  transform: matrix(0.5, 0.1, 0.5, 1, 10, -2); /* Combina escalado, inclinación y traslación */
+}

@@ -1,0 +1,25 @@
+Transform: Sirve para mover, rotar, escalar, inclinar o girar un elemento.
+
+translate	Mueve el elemento en X e Y.		translate(50px, 100px)
+scale		Cambia el tamaño del elemento.		scale(1.5)
+rotate		Gira el elemento en un plano 2D.	rotate(45deg)
+skew		Inclina el elemento en X e Y.		skew(20deg, 10deg)
+
+Función		Unidades Permitidas			Ejemplo
+
+translate	px, %, em, rem, vw, vh		translate(50px, 20%)
+scale		Escalar sin unidades		scale(1.5)
+rotate		deg, rad, turn				rotate(90deg)
+skew		deg, rad, turn				skew(20deg, 10deg)
+perspective	px					        perspective(500px)
+
+
+
+matrix		Aplica transformaciones combinadas.	matrix(1, 0, 0, 1, 50, 100)
+
+transform: matrix(a, b, c, d, e, f);
+
+a y d: Escalan el elemento en los ejes X e Y respectivamente.
+b y c: Inclinaciones en los ejes Y y X.
+e y f: Traslaciones en los ejes X e Y (en píxeles).
+matrix		Números (proporciones, píxeles)		matrix(1, 0, 0, 1, 50, 100)

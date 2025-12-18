@@ -1,0 +1,111 @@
+/* Estilo del contenedor principal */
+.container {
+    display: flex;            /* Utiliza Flexbox para organizar los elementos hijos. */
+    flex-wrap: wrap;          /* Permite que las cajas se muevan a una nueva fila si no caben en una sola. */
+    justify-content: center;  /* Centra las cajas horizontalmente dentro del contenedor. */
+}
+
+/* Estilo base para todas las cajas */
+.caja {
+  width: 180px;               /* Ancho fijo de la caja. */
+  height: 180px;              /* Altura fija de la caja. */
+  background-color: #30B037;  /* Color de fondo inicial (verde). */
+  color: #FFF;                /* Color del texto (blanco). */
+  text-align: center;         /* Centra el texto horizontalmente. */
+  line-height: 180px;         /* Centra el texto verticalmente al igualar la altura de línea con la altura de la caja. */
+  margin: 15px;               /* Espacio entre las cajas. */
+  font-size: 18px;            /* Tamaño de la fuente. */
+  font-family: Arial;         /* Fuente utilizada. */
+}
+
+/* BACK-GROUND - Transición de color de fondo (caja 1) */
+.caja1 {
+  background-color: #C0392B;  /* Color inicial de fondo (rojo oscuro). */
+  transition: 1s ease 0.5s;  /* Aplica una transición uniforme de 1 segundo a todas las propiedades. */
+}
+.caja1:hover {
+  background-color: #3F51B5;  /* Cambia el color de fondo a azul oscuro al pasar el cursor. */
+}
+
+/* FONT-SIZE - Transición de tamaño de fuente (caja 2) */
+.caja2 {
+  background-color: #9B59B6;  /* Color inicial de fondo (morado). */
+  transition: 1s ease 0.5s; /* Aplica una transición suave al tamaño de fuente. */
+}
+.caja2:hover {
+  font-size: 28px;            /* Aumenta el tamaño de la fuente a 28px al pasar el cursor. */
+}
+
+/* COLOR - Transición de color del texto (caja 3) */
+.caja3 {
+  background-color: #1980B9;  /* Color inicial de fondo (azul). */
+  transition: color 1s ease; /* Aplica una transición de color de texto en 1 segundo. */
+}
+.caja3:hover {
+  color: black;              /* Cambia el color del texto a amarillo al pasar el cursor. */
+}
+
+/* LINEHEIGHT - Transición de altura de línea (caja 4) */
+.caja4 {
+  background-color: #5498DB;  /* Color inicial de fondo (azul claro). */
+  transition: 1s ease;      /* Aplica una transición a las propiedades afectadas en 1 segundo. */
+}
+.caja4:hover {
+  line-height: 300px;         /* Aumenta la altura de línea a 300px al pasar el cursor, extendiendo el texto verticalmente. */
+}
+
+/* BORDER-RADIUS - Transición de bordes redondeados (caja 5) */
+.caja5 {
+  border-radius: 0px;         /* Esquinas rectas por defecto. */
+
+  transition: all 1s ease;
+}
+.caja5:hover {
+  border-radius: 20px;        /* Redondea las esquinas a 20px al pasar el cursor. */
+}
+
+/* BOX-SHADOW - Transición de sombra (caja 6) */
+.caja6 {
+  transition: 1s linear;      /* Aplica una transición uniforme de 1 segundo. */
+  background-color: #F1C40F;  /* Color inicial de fondo (amarillo). */
+}
+.caja6:hover {
+  box-shadow: 10px 10px rgba(0, 0, 0, 0.5); /* Agrega una sombra al pasar el cursor. */
+}
+
+/* OPACITY - Transición de opacidad (caja 7) */
+.caja7 {
+  background-color: #E67E22;  /* Color inicial de fondo (naranja). */
+  transition: 1s linear;      /* Aplica una transición uniforme de 1 segundo. */
+}
+.caja7:hover {
+  opacity: 0.3;               /* Reduce la opacidad al 30% al pasar el cursor. */
+}
+
+/* BORDER - Transición de borde (caja 8) */
+.caja8 {
+  transition: 0.5s linear;      /* Aplica una transición uniforme de 1 segundo. */
+  background-color: #95A5A6;  /* Color inicial de fondo (gris claro). */
+}
+.caja8:hover {
+  border-style: solid;        /* Cambia el estilo del borde a sólido. */
+  border-color: #000;         /* Cambia el color del borde a negro. */
+}
+
+/* MARGIN - Transición de márgenes (caja 9) */
+.caja9 {
+  transition: 0.5s linear;      /* Aplica una transición uniforme de 1 segundo. */
+  background-color: #2C3E50;  /* Color inicial de fondo (gris oscuro). */
+}
+.caja9:hover {
+  margin: 80px;               /* Aumenta los márgenes a 80px al pasar el cursor. */
+}
+
+/* PADDING - Transición de relleno interno (caja 10) */
+.caja10 {
+  transition: 0.5s linear;      /* Aplica una transición uniforme de 1 segundo. */
+  background-color: black;    /* Color inicial de fondo (negro). */
+}
+.caja10:hover {
+  padding: 30px;              /* Aumenta el relleno interno a 30px al pasar el cursor. */
+}

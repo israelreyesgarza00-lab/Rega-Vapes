@@ -1,0 +1,27 @@
+TRANSITION: Suaviza el cambio entre dos estados.
+
+Sintaxis:
+
+transition: property duration timing-function delay;
+
+1. PROPERTY:
+   Colores: background-color, color, border-color.
+   Dimensiones: width, height, margin, padding.
+   Posicionamiento: top, left, transform.
+   Otros: opacity, box-shadow, border-radius.
+
+2. DURATION:
+   Define el tiempo, se expresa en s y ms.
+
+3. TIMING-FUNCTION:
+   Controla la velocidad de transición.
+   ease (Por defecto): Comienza lenta, acelera y termina lenta.
+   linear: Velocidad constante.
+   ease-in: Comienza lenta y acelera gradualmente.
+   ease-out: Comienza rápida y desacelera gradualmente.
+   ease-in-out: Comienza lenta, acelera y termina lenta.
+   cubic-bezier(x1, y1, x2, y2): Define una curva personalizada usando coordenadas Bezier.
+
+4. DELAY:
+   Retraso antes de iniciar la transición, se expresa en s y ms.
+

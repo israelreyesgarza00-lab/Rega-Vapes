@@ -1,0 +1,42 @@
+
+<html>
+<head>
+<title>Display Flex</title> <meta charset="utf-8">
+<style>
+ .contenedor {
+    border: 1px solid #ccc;
+    background-color: #EEE;
+    padding: 10px;
+ }
+ 
+ .contenedor-flex {
+   display: flex;
+ }
+ 
+ .contenedor-inline-flex {
+   display: inline-flex;
+ }
+ 
+ .caja {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin: 5px;
+}
+</style>
+</head>
+<body>
+    <h2>display: flex</h2>
+    <div class="contenedor contenedor-flex">
+      <div class="caja">Caja 1</div>
+      <div class="caja">Caja 2</div>
+      <div class="caja">Caja 3</div>
+    </div>
+    
+    <h2>display: inline-flex</h2>
+    <div class="contenedor contenedor-inline-flex">
+      <div class="caja">Caja 1</div>
+      <div class="caja">Caja 2</div>
+      <div class="caja">Caja 3</div>
+    </div>
+</body>
+</html>

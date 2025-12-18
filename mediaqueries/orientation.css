@@ -1,0 +1,37 @@
+/* Estilos generales */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: white;
+}
+
+/* Estilo del texto */
+.mensaje {
+    font-size: 2rem;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Vertical (portrait) */
+@media (orientation: portrait) {
+    body {
+        background-color: lightblue;
+    }
+    .mensaje::after {
+        content: " (Portrait)";
+    }
+}
+
+/* Horizontal (landscape) */
+@media (orientation: landscape) {
+    body {
+        background-color: lightgreen;
+    }
+    .mensaje::after {
+        content: " (Landscape)";
+    }
+}

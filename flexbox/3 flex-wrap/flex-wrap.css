@@ -1,0 +1,30 @@
+.caja{
+  width: 200px;
+  height: 150px;
+  margin: 10px;
+  color: #FFF;
+  font-size: 20px;
+  text-align: center;
+  line-height: 150px;
+}
+#flex-wrap{
+  display: flex;
+  flex-wrap: wrap;
+}
+#flex-wrap div{
+  background-color: blueviolet;
+}
+#flex-no-wrap{
+  display: flex;
+  flex-wrap: nowrap;
+}
+#flex-no-wrap div{
+  background-color: orangered;
+}
+#flex-wrap-reverse{
+  display: flex;
+  flex-wrap: wrap-reverse;
+}
+#flex-wrap-reverse div{
+  background-color: blue;
+}

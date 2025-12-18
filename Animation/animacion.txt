@@ -1,0 +1,40 @@
+Animation: Crea animaciones completas, repetitivas o continuas, usando @keyframes.
+Definir keyframes (puntos de referencia en una secuencia de animación)[fotogramas clave]
+
+@keyframes nombreAnimacion {
+
+  0%   {}
+  50%  {}
+  100% {}
+}
+
+.elemento {
+animation: propiedades propiedad1 propiedadn;
+}
+
+SHORTHAND:
+animation: [name] [duration] [timing-function] [delay] [iteration-count] [direction] [fill-mode]; 
+
+PROPIEDADES:
+1. animation-name: El nombre de la animación (referencia a la regla @keyframes).
+2. animation-duration: El tiempo que durará la animación (por ejemplo, 2s para dos segundos).
+3. animation-timing-function: Controla la aceleración de la animación (ejemplo: ease, linear, ease-in, ease-out).
+4. animation-delay: Define un retraso antes de que comience la animación.
+5. animation-iteration-count: Cuántas veces se repite la animación (puede ser un número o infinite para repetirse indefinidamente).
+6. animation-direction: Establece si la animación se reproduce en orden normal o invertido (ejemplo: normal, reverse, alternate).
+7. animation-fill-mode: Determina el comportamiento del elemento después de que la animación haya finalizado (ejemplo: forwards para mantener el estilo final).
+
+VALORES:
+1. animation-name: Nombre de la animación.
+2. animation-duration: s, ms.
+3. animation-timing-function: linear, ease, ease-in, ease-out, ease-in-out, cubic-bezier.
+4. animation-delay: s, ms.
+5. animation-iteration-count: 1, infinite, número entero.
+6. animation-direction: normal, reverse, alternate, alternate-reverse.
+7. animation-fill-mode: none, forwards, backwards, both.
+none: valor inicial
+forwards: valor 100%
+backwards: valor 0% 
+both: 0% 100% 
+
+
