@@ -1,154 +1,276 @@
-/* === ESTILOS GENERALES === */
-
 body {
-    font-family: Arial, sans-serif; 
-    margin: 0; 
+
+    font-family: Arial, sans-serif;
+
+    margin: 0;
+
     padding: 0;
-    display: flex; 
+
+    display: flex;
+
     justify-content: center;
+
     align-items: flex-start;
+
     min-height: 100vh;
+
      background-color: #390349;
+
 }
+
+
 
 .grid-container {
-    display: grid; 
+
+    display: grid;
+
     grid-template-areas:
+
         "header header header"
+
         "nav nav nav"
+
         "main main aside"
+
         "main main aside"
+
         "main main aside"
+
         "main main aside"
+
         "main main aside"
+
         "footer footer footer";
 
+
+
     grid-template-columns: 2fr 1fr;
+
     gap: 10px;
+
     width: 90%;
+
     padding: 10px;
+
     border: 1px solid #ddd;
+
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+
 }
+
+
 
 /* === ÁREAS === */
 
+
+
 header { grid-area: header; background: #1B1B1B; color: white; text-align: center; padding: 20px; }
+
 nav { grid-area: nav; background: #333; color: white; padding: 10px; }
+
 main { grid-area: main; display: grid; grid-template-columns: 1fr; gap: 10px; padding: 10px; background: #f1f1f1; }
+
 aside { grid-area: aside; display: flex; flex-direction: column; gap: 20px; padding: 10px; border-left: 2px solid #ddd; }
+
 footer { grid-area: footer; background: #1B1B1B; color: white; text-align: center; padding: 10px; font-family: 'Oswald', sans-serif; }
 
+
+
 /* Navegación */
+
 nav ul {
+
     list-style: none;
+
     display: flex;
+
     justify-content: space-around;
+
     padding: 0;
+
 }
+
 nav a { color: white; text-decoration: none; }
+
 .logo{img { max-width: 150px;height: auto; border-radius: 10px; }
+
 }
+
 .listas {
+
     font-family: 'Arial', sans-serif;
+
     font-size: 16px;
 
-}
-.estilo{
-    font-family: 'Science Gothic', sans-serif;
+
+
 }
 
-.font{
-    font-family: 'Oswald', sans-serif;
+.estilo{
+
+    font-family: 'Science Gothic', sans-serif;
+
 }
+
+
+
+.font{
+
+    font-family: 'Oswald', sans-serif;
+
+}
+
+
+
 
 
 article {
+
     background: white;
+
     padding: 20px;
+
     border: 1px solid #ddd;
+
 }
+
 .fijo {
+
     position: fixed;
+
     bottom: 20px;
+
     background-color: #333;
+
     font-family: Arial, sans-serif;
+
     color: white;
+
     padding: 10px;
+
     text-decoration: none;
+
     border-radius: 5px;
+
     width: 200px;
+
     text-align: center;
+
 }
 
-img { 
-    max-width: 100%; height: auto; border-radius: 10px; 
 
-    animation: escalarAnimacion 5s ease-in-out infinite;
-  }
-    @keyframes escalarAnimacion{
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1);} 
-    100% { transform: scale(1);}
-  }
+
+
+
+
 
 .redes-sociales {
-    display: flex; 
-    gap: 20px; 
-    margin-top: 20px;
-    flex-wrap: wrap; 
+    display: flex;             /* Activa el modo flexible */
+    flex-wrap: wrap;           /* Permite que los botones bajen si no caben */
+    justify-content: center;   /* Centra los botones horizontalmente */
+    gap: 20px;                 /* Espacio uniforme entre botones */
+    padding: 20px;
 }
 
+
+
 h3{
+
     color: white;
+
     font-family: 'Oswald', sans-serif;;
+
 }
+
+
+
 
 
 .boton-red-social {
-    display: inline-block; 
-    padding: 10px 20px;
+    display: flex;
+    flex-direction: column;    /* Pone el icono arriba y el texto abajo */
+    align-items: center;       /* Centra todo el contenido */
     text-align: center;
-    text-decoration: none; 
-    color: rgb(238, 228, 228); 
-    font-weight: bold;
-    border-radius: 5px; 
-    min-width: 180px; 
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
-    transition: 1s linear;
+    text-decoration: none;
+    color: white;
+    width: 100%;               /* Importante para el ajuste relativo */
+    max-width: 180px;
 }
+
+.boton-red-social img {
+    width: 80px;               /* Tamaño fijo base */
+    max-width: 100%;           /* No permite que se salga de su caja */
+    height: auto;
+    margin-bottom: 10px;
+    border-radius: 50%;        /* Mantiene la forma circular */
+}
+
+
 
 @media (max-width: 768px) {
 
+
+
     /* Cambiamos completamente el contenedor: de GRID a FLEX */
+
     .grid-container {
+
         display: flex; /* Activamos flexbox */
+
         flex-direction: column; /* Todo en columna */
+
         gap: 10px;
+
         width: 100%;
+
     }
-    
+
+   
+
+
 
     /* Menú en columna */
+
     nav ul {
+
         flex-direction: column;
+
         gap: 10px;
+
         text-align: center;
+
     }
+
+
 
     /* Artículos apilados */
+
     main {
+
         display: flex;
+
         flex-direction: column;
+
         gap: 10px;
+
     }
 
+
+
     /* Redes sociales en fila */
+
     aside {
+
         flex-direction: row;
+
         justify-content: space-around;
+
         border-left: none;
+
         border-top: 2px solid #ddd;
+
         padding-top: 20px;
+
     }
+
 }
