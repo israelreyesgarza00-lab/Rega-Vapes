@@ -1,0 +1,62 @@
+{
+  "nombre": "Mi Negocio de Computadoras",
+  "contador_pedido": 2,
+  "catalogo": [
+    {
+      "marca": "Apple",
+      "modelo": "MacBook Air",
+      "precio": 22999.0,
+      "stock": 8
+    },
+    {
+      "marca": "Apple",
+      "modelo": "MacBook Pro",
+      "precio": 34999.0,
+      "stock": 5
+    },
+    {
+      "marca": "Apple",
+      "modelo": "iMac",
+      "precio": 29999.0,
+      "stock": 3
+    },
+    {
+      "marca": "HP",
+      "modelo": "Pavilion 15",
+      "precio": 12999.0,
+      "stock": 15
+    },
+    {
+      "marca": "HP",
+      "modelo": "EliteBook 840",
+      "precio": 21999.0,
+      "stock": 6
+    },
+    {
+      "marca": "Dell",
+      "modelo": "Inspiron 14",
+      "precio": 11999.0,
+      "stock": 10
+    },
+    {
+      "marca": "Dell",
+      "modelo": "XPS 13",
+      "precio": 26999.0,
+      "stock": 4
+    },
+    {
+      "marca": "Lenovo",
+      "modelo": "ThinkPad T14",
+      "precio": 18999.0,
+      "stock": 7
+    }
+  ],
+  "ordenes": [
+    {
+      "numero_pedido": "PED-00001",
+      "cliente": "Israel",
+      "fecha": "2026-09-03 12:38:33",
+      "items": []
+    }
+  ]
+}
