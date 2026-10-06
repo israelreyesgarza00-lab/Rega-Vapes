@@ -21,7 +21,7 @@ def ordenamiento_burbuja(lista):
     return lista
 
 # Ejemplo de uso:
-numeros = [64, 100, 25, 12, 22, 11, 90]
+numeros = [101, 100, 125, 0, 122, 11, 90]
 print("Lista original:", numeros)
 
 numeros_ordenados = ordenamiento_burbuja(numeros)
