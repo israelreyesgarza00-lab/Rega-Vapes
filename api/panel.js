@@ -3,6 +3,10 @@ const { Pool } = require('pg')
 const Excel = require('exceljs')
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 3 })
+const closureFields = [
+  ['Efectivo', 'cash'], ['Transferencia', 'transfer'], ['Tarjeta', 'card']
+]
+const closureAmount = value => typeof value === 'string' && /^\d{1,14}(\.\d{1,2})?$/.test(value)
 const paymentMethods = ['Transferencia', 'Efectivo', 'Tarjeta']
 const hash = value => createHash('sha256').update(value).digest()
 const integer = (value, min, max) =>
@@ -95,6 +99,23 @@ async function getReport(client, start, duration) {
   }
 }
 
+async function getClosure(client, date, payments) {
+  const result = await client.query(`
+    SELECT cash, transfer, card, saved_at
+    FROM panel_daily_closures WHERE closed_on = $1
+  `, [date])
+  const saved = result.rows[0]
+  const recorded = new Map(payments.map(row => [row.method, row.total]))
+  return {
+    savedAt: saved?.saved_at ?? null,
+    unclassified: recorded.get('Sin registrar') ?? '0.00',
+    methods: closureFields.map(([method, key]) => ({
+      method, key, expected: recorded.get(method) ?? '0.00',
+      received: saved?.[key] ?? null
+    }))
+  }
+}
+
 async function sendExcel(res, file, report) {
   const workbook = new Excel.Workbook()
   const amount = value => value == null ? null : Number(value)
@@ -151,7 +172,25 @@ async function sendExcel(res, file, report) {
     payments.addRow([method, totals.get(method) ?? 0])
   }
 
-  for (const sheet of [sales, ranking, balance, payments]) {
+  if (report.closure) {
+    const closure = workbook.addWorksheet('Corte diario')
+    closure.columns = [
+      { header: 'Método', width: 26 },
+      ...['Registrado', 'Recibido', 'Diferencia'].map(header => ({
+        header, width: 18, style: { numFmt: format }
+      }))
+    ]
+    for (const row of report.closure.methods) {
+      const expected = amount(row.expected)
+      const received = amount(row.received)
+      closure.addRow([row.method, expected, received, received === null
+        ? null : Math.round((received - expected) * 100) / 100])
+    }
+    closure.addRow(['Sin método registrado', amount(report.closure.unclassified)])
+    closure.addRow(['Estado', report.closure.savedAt ? 'Guardado' : 'Pendiente'])
+  }
+
+  for (const sheet of workbook.worksheets) {
     sheet.views = [{ state: 'frozen', ySplit: 1 }]
     sheet.getRow(1).font = { bold: true }
   }
@@ -197,6 +236,7 @@ module.exports = async (req, res) => {
 
       const report = await transaction(async client => {
         const data = await getReport(client, start, duration)
+        if (day !== undefined) data.closure = await getClosure(client, start, data.payments)
         if (action === 'overview') {
           const products = await client.query(`
             SELECT p.id, p.model, p.flavor, p.stock, p.order_quantity, m.unit_cost, m.retail_price,
@@ -227,6 +267,20 @@ module.exports = async (req, res) => {
       id, product, model, flavor, stock, quantity, date, units, price,
       cost, retailPrice, payment, expectedCost
     } = req.body || {}
+
+    if (action === 'closure') {
+      const { cash, transfer, card } = req.body || {}
+      if (!validDate(date) || date > today() || ![cash, transfer, card].every(closureAmount)) {
+        return res.status(400).json({ error: 'Revisa la fecha y los tres importes recibidos.' })
+      }
+      await pool.query(`
+        INSERT INTO panel_daily_closures (closed_on, cash, transfer, card)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (closed_on) DO UPDATE SET cash = excluded.cash,
+          transfer = excluded.transfer, card = excluded.card, saved_at = now()
+      `, [date, cash, transfer, card])
+      return res.json({ ok: true })
+    }
 
     if (action === 'product' && name(model) && name(flavor) && integer(stock, 0, 1000000)) {
       await pool.query(

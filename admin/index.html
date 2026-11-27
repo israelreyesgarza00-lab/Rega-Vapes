@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <title>Panel de ventas | Rega</title>
   <link rel="stylesheet" href="/admin/panel.css?v=periodos-1">
-  <script src="/admin/panel.js?v=precios-1" defer></script>
+  <script src="/admin/panel.js?v=corte-1" defer></script>
 </head>
 <body>
   <header><div class="wrap"><h1>Ventas e inventario</h1></div></header>
@@ -56,6 +56,19 @@
         <a id="export" class="button" hidden>Descargar Excel</a>
       </form>
       <p id="summary"></p>
+      <div id="daily-closure" hidden>
+        <h3>Corte diario</h3>
+        <p id="closure-status" aria-live="polite"></p>
+        <form id="closure-form">
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Método</th><th>Registrado</th><th>Recibido</th><th>Diferencia</th></tr></thead>
+              <tbody id="closure-rows"></tbody>
+            </table>
+          </div>
+          <button>Guardar corte</button>
+        </form>
+      </div>
 
       <div class="split">
         <div>

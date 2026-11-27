@@ -229,6 +229,66 @@ function cancelButton(row) {
   return button
 }
 
+const closureForm = byId('closure-form')
+let closureDate
+
+function renderClosure(date, closure) {
+  const section = byId('daily-closure')
+  section.hidden = !closure || !date
+  closureDate = section.hidden ? undefined : date
+  if (section.hidden) return
+
+  const rows = closure.methods.map(row => {
+    const input = document.createElement('input')
+    input.type = 'number'
+    input.min = '0'
+    input.max = '99999999999999.99'
+    input.step = '0.01'
+    input.required = true
+    input.name = row.key
+    input.value = row.received ?? ''
+    input.setAttribute('aria-label', `Importe recibido en ${row.method}`)
+    const difference = document.createElement('span')
+    const update = () => {
+      difference.textContent = input.value === '' ? '—'
+        : currency.format((Math.round(Number(input.value) * 100) -
+          Math.round(Number(row.expected) * 100)) / 100)
+    }
+    input.addEventListener('input', update)
+    update()
+    return [row.method, currency.format(row.expected), input, difference]
+  })
+  if (Number(closure.unclassified)) {
+    rows.push(['Sin método registrado', currency.format(closure.unclassified), '—', '—'])
+  }
+  renderRows('closure-rows', rows, '', 4)
+  byId('closure-status').textContent = closure.savedAt
+    ? `Corte guardado del ${date}. La diferencia se compara con las ventas actuales de ese día.`
+    : `Corte pendiente del ${date}. Captura 0 si no recibiste pagos por ese método.`
+}
+
+closureForm.addEventListener('submit', async event => {
+  event.preventDefault()
+  const selected = activePeriod().day
+  if (!closureDate || closureDate !== selected) {
+    message('Actualiza el reporte del día antes de guardar el corte.', true)
+    return
+  }
+  const button = closureForm.querySelector('button')
+  if (button.disabled) return
+  button.disabled = true
+  try {
+    const body = Object.fromEntries(new FormData(closureForm))
+    await request('closure', { ...body, date: selected })
+    message(`Corte del ${selected} guardado.`)
+    await refresh()
+  } catch (error) {
+    message(error.message, true)
+  } finally {
+    button.disabled = false
+  }
+})
+
 async function refresh() {
   if (!report.reportValidity() || !delivery.reportValidity()) return
 
@@ -236,6 +296,7 @@ async function refresh() {
   const period = activePeriod()
   const data = await request('overview')
   if (current !== refreshId) return
+  renderClosure(period.day, data.closure)
 
   const download = byId('export')
   download.href = '/api/panel?' + new URLSearchParams({ action: 'excel', ...period })
