@@ -5,13 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <title>Panel de ventas | Rega</title>
-  <link rel="stylesheet" href="/admin/panel.css">
-  <script src="/admin/panel.js" defer></script>
+  <link rel="stylesheet" href="/admin/panel.css?v=reportes-1">
+  <script src="/admin/panel.js?v=reportes-1" defer></script>
 </head>
 <body>
-  <header>
-    <div class="wrap"><h1>Ventas e inventario</h1></div>
-  </header>
+  <header><div class="wrap"><h1>Ventas e inventario</h1></div></header>
 
   <main class="wrap">
     <p id="status" role="status" aria-live="polite"></p>
@@ -20,18 +18,37 @@
       <h2>Registrar venta</h2>
       <form id="sale">
         <label>Fecha <input name="date" type="date" required></label>
+        <label>Buscar modelo o sabor <input id="sale-search" type="search" autocomplete="off"></label>
         <label>Modelo y sabor <select name="product" required></select></label>
         <label>Unidades <input name="units" type="number" min="1" max="1000000" value="1" required></label>
-        <label>Precio unitario <input name="price" type="number" min="0" step="0.01" required></label>
+        <label>Precio unitario
+          <input name="price" type="number" min="0" max="9999999999.99" step="0.01" required>
+        </label>
+        <label>Método de pago
+          <select name="payment" required>
+            <option value="">Selecciona</option>
+            <option>Transferencia</option>
+            <option>Efectivo</option>
+            <option value="Tarjeta">Tarjeta</option>
+          </select>
+        </label>
         <button disabled>Guardar venta</button>
+        <p id="sale-cost" aria-live="polite"></p>
       </form>
     </section>
 
     <section>
-      <h2>Reporte semanal</h2>
+      <h2>Reporte de ventas</h2>
       <form id="report">
-        <label>Elige un día de la semana <input name="week" type="date" required></label>
-        <button>Ver semana</button>
+        <label>Periodo
+          <select name="period">
+            <option value="week">Semanal</option>
+            <option value="month">Mensual</option>
+          </select>
+        </label>
+        <label id="report-week">Día de la semana <input name="week" type="date" required></label>
+        <label id="report-month" hidden>Mes <input name="month" type="month" required disabled></label>
+        <button>Ver reporte</button>
         <a id="export" class="button" hidden>Descargar Excel</a>
       </form>
       <p id="summary"></p>
@@ -47,10 +64,15 @@
           </div>
         </div>
         <div>
-          <h3>Ventas de la semana</h3>
+          <h3>Ventas del periodo</h3>
           <div class="scroll">
             <table>
-              <thead><tr><th>Fecha</th><th>Modelo</th><th>Sabor</th><th>Unidades</th><th>Importe</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Fecha</th><th>Modelo</th><th>Sabor</th><th>Unidades</th>
+                  <th>Importe</th><th>Pago</th><th>Costo</th><th>Margen bruto</th>
+                </tr>
+              </thead>
               <tbody id="sales"></tbody>
             </table>
           </div>
@@ -69,10 +91,25 @@
 
       <div class="scroll">
         <table>
-          <thead><tr><th>Modelo</th><th>Sabor</th><th>Stock</th><th>Unidades en 28 días</th><th>Sugerencia</th><th>A pedir</th></tr></thead>
+          <thead>
+            <tr><th>Modelo</th><th>Sabor</th><th>Stock</th><th>Unidades en 28 días</th>
+              <th>Sugerencia</th><th>A pedir</th></tr>
+          </thead>
           <tbody id="stock"></tbody>
         </table>
       </div>
+
+      <details>
+        <summary>Costo unitario por modelo</summary>
+        <form id="cost">
+          <label>Modelo <select name="product" required></select></label>
+          <label>Costo por unidad
+            <input name="cost" type="number" min="0" max="9999999999.99" step="0.01" required>
+          </label>
+          <button disabled>Guardar costo</button>
+        </form>
+        <p>El costo se aplica a todos los sabores del modelo en ventas nuevas.</p>
+      </details>
 
       <details>
         <summary>Agregar producto o ajustar existencias</summary>
