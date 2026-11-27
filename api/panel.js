@@ -199,7 +199,7 @@ module.exports = async (req, res) => {
         const data = await getReport(client, start, duration)
         if (action === 'overview') {
           const products = await client.query(`
-            SELECT p.id, p.model, p.flavor, p.stock, p.order_quantity, m.unit_cost,
+            SELECT p.id, p.model, p.flavor, p.stock, p.order_quantity, m.unit_cost, m.retail_price,
                    coalesce(sum(s.units), 0)::int AS recent_units,
                    greatest(0, ceil(coalesce(sum(s.units), 0) * $1::numeric / 28)
                      - p.stock)::int AS suggested
@@ -207,7 +207,7 @@ module.exports = async (req, res) => {
             LEFT JOIN panel_sales s ON s.product_id = p.id AND s.cancelled_at IS NULL
               AND s.sold_on BETWEEN $2::date - 27 AND $2::date
             LEFT JOIN panel_model_costs m ON m.model_key = lower(btrim(p.model))
-            GROUP BY p.id, m.unit_cost
+            GROUP BY p.id, m.unit_cost, m.retail_price
             ORDER BY suggested DESC, p.model, p.flavor
           `, [leadTime, today()])
           data.products = products.rows
@@ -225,7 +225,7 @@ module.exports = async (req, res) => {
 
     const {
       id, product, model, flavor, stock, quantity, date, units, price,
-      cost, payment, expectedCost
+      cost, retailPrice, payment, expectedCost
     } = req.body || {}
 
     if (action === 'product' && name(model) && name(flavor) && integer(stock, 0, 1000000)) {
@@ -255,12 +255,16 @@ module.exports = async (req, res) => {
         : res.status(404).json({ error: 'Producto no encontrado.' })
     }
 
-    if (action === 'cost' && productId(product) && money(cost)) {
+    if (action === 'cost' && productId(product) && money(cost)
+        && (retailPrice === undefined || retailPrice === '' || money(retailPrice))) {
       const result = await pool.query(`
-        INSERT INTO panel_model_costs (model_key, unit_cost)
-        SELECT lower(btrim(model)), $2::numeric FROM panel_products WHERE id = $1
-        ON CONFLICT (model_key) DO UPDATE SET unit_cost = excluded.unit_cost
-      `, [product, cost])
+        INSERT INTO panel_model_costs (model_key, unit_cost, retail_price)
+        SELECT lower(btrim(model)), $2::numeric, $3::numeric FROM panel_products WHERE id = $1
+        ON CONFLICT (model_key) DO UPDATE
+        SET unit_cost = excluded.unit_cost,
+            retail_price = CASE WHEN $4::boolean THEN excluded.retail_price
+                                ELSE panel_model_costs.retail_price END
+      `, [product, cost, retailPrice || null, retailPrice !== undefined])
       return result.rowCount
         ? res.json({ ok: true })
         : res.status(404).json({ error: 'Modelo no encontrado.' })

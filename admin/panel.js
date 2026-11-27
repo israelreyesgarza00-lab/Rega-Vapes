@@ -124,6 +124,21 @@ function orderInput(product) {
   return input
 }
 
+let selectedSaleId
+let defaultSalePrice = ''
+
+function syncSalePrice(reset = false) {
+  const product = products.find(row => String(row.id) === sale.elements.product.value)
+  const field = sale.elements.price
+  const nextPrice = product?.retail_price ?? ''
+  if (reset || product?.id !== selectedSaleId || field.value === defaultSalePrice) {
+    field.value = nextPrice
+  }
+  selectedSaleId = product?.id
+  defaultSalePrice = nextPrice
+  showSaleCost()
+}
+
 function showSaleCost() {
   const product = selectedProduct(sale)
   const output = byId('sale-cost')
@@ -162,15 +177,17 @@ function fillSaleOptions() {
   if (search.value.trim() && matches.length === 1) {
     sale.elements.product.value = String(matches[0].id)
   }
-  showSaleCost()
+  syncSalePrice()
 }
 
 function showModelCost() {
-  cost.elements.cost.value = selectedProduct(cost)?.unit_cost ?? ''
+  const product = selectedProduct(cost)
+  cost.elements.cost.value = product?.unit_cost ?? ''
+  cost.elements.retailPrice.value = product?.retail_price ?? ''
 }
 
 search.addEventListener('input', fillSaleOptions)
-sale.elements.product.addEventListener('change', showSaleCost)
+sale.elements.product.addEventListener('change', () => syncSalePrice())
 sale.elements.price.addEventListener('input', showSaleCost)
 cost.elements.product.addEventListener('change', showModelCost)
 
@@ -271,7 +288,7 @@ for (const [form, action, success] of [
   [sale, 'sale', 'Venta guardada.'],
   [byId('product'), 'product', 'Producto agregado.'],
   [adjust, 'stock', 'Existencias actualizadas.'],
-  [cost, 'cost', 'Costo actualizado para todos los sabores del modelo.']
+  [cost, 'cost', 'Costo y precio actualizados para todos los sabores del modelo.']
 ]) {
   form.addEventListener('submit', async event => {
     event.preventDefault()
@@ -301,6 +318,7 @@ for (const [form, action, success] of [
       if (action === 'sale') {
         pendingSale = undefined
         form.elements.units.value = '1'
+        syncSalePrice(true)
         reportDate(body.date)
       }
       if (action === 'product') form.reset()
