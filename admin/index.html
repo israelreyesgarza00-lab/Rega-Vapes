@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <title>Panel de ventas | Rega</title>
   <link rel="stylesheet" href="/admin/panel.css?v=periodos-1">
-  <script src="/admin/panel.js?v=periodos-1" defer></script>
+  <script src="/admin/panel.js?v=precios-1" defer></script>
 </head>
 <body>
   <header><div class="wrap"><h1>Ventas e inventario</h1></div></header>
@@ -106,15 +106,18 @@
       </div>
 
       <details>
-        <summary>Costo unitario por modelo</summary>
+        <summary>Costo y precio al público por modelo</summary>
         <form id="cost">
           <label>Modelo <select name="product" required></select></label>
           <label>Costo por unidad
             <input name="cost" type="number" min="0" max="9999999999.99" step="0.01" required>
           </label>
-          <button disabled>Guardar costo</button>
+          <label>Precio al público por unidad
+            <input name="retailPrice" type="number" min="0" max="9999999999.99" step="0.01">
+          </label>
+          <button disabled>Guardar costo y precio</button>
         </form>
-        <p>El costo se aplica a todos los sabores del modelo en ventas nuevas.</p>
+        <p>El costo y el precio se aplican a todos los sabores del modelo. Puedes ajustar el precio al registrar una venta.</p>
       </details>
 
       <details>
