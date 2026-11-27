@@ -213,4 +213,4 @@ for (const [form, action, success] of [
   })
 }
 
-refresh().catch(error => message(error.message, true)
+refresh().catch(error => message(error.message, true))
