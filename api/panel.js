@@ -8,6 +8,7 @@ const hash = value => createHash('sha256').update(value).digest()
 const integer = (value, min, max) =>
   Number.isInteger(value) && value >= min && value <= max
 const productId = value => /^\d{1,18}$/.test(String(value))
+const uuid = value => typeof value === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value)
 const money = value => typeof value === 'string' && /^\d{1,10}(\.\d{1,2})?$/.test(value)
 const name = value =>
   typeof value === 'string' && value.trim().length > 0 && value.trim().length <= 100
@@ -39,16 +40,14 @@ async function transaction(work, begin = 'BEGIN') {
   }
 }
 
-async function getReport(client, start, monthly) {
+async function getReport(client, start, duration) {
   const period = `
-    s.sold_on >= $1::date AND
-    s.sold_on < $1::date + CASE
-      WHEN $2::boolean THEN interval '1 month' ELSE interval '7 days'
-    END`
-  const params = [start, monthly]
+    s.cancelled_at IS NULL AND
+    s.sold_on >= $1::date AND s.sold_on < $1::date + $2::interval`
+  const params = [start, duration]
 
   const sales = await client.query(`
-    SELECT s.sold_on::text AS date, p.model, p.flavor, s.units,
+    SELECT s.id, s.sold_on::text AS date, p.model, p.flavor, s.units,
            s.unit_price, s.units * s.unit_price AS total,
            s.payment_method, s.unit_cost,
            s.units * s.unit_cost AS cost_total,
@@ -96,7 +95,7 @@ async function getReport(client, start, monthly) {
   }
 }
 
-async function sendExcel(res, start, monthly, report) {
+async function sendExcel(res, file, report) {
   const workbook = new Excel.Workbook()
   const amount = value => value == null ? null : Number(value)
   const format = '#,##0.00'
@@ -157,7 +156,6 @@ async function sendExcel(res, start, monthly, report) {
     sheet.getRow(1).font = { bold: true }
   }
 
-  const file = monthly ? `ventas-mes-${start.slice(0, 7)}` : `ventas-semana-${start}`
   const buffer = await workbook.xlsx.writeBuffer()
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
   res.setHeader('Content-Disposition', `attachment; filename="${file}.xlsx"`)
@@ -177,13 +175,19 @@ module.exports = async (req, res) => {
     return res.status(401).json({ error: 'Acceso privado.' })
   }
 
-  const { action, week, month, days } = req.query
+  const { action, day, week, month, year, days } = req.query
   try {
     if (req.method === 'GET' && ['overview', 'excel'].includes(action)) {
-      const monthly = month !== undefined
-      const start = monthly ? `${month}-01` : week
-      if (!validDate(start) || (!monthly && new Date(start).getUTCDay() !== 1)) {
-        return res.status(400).json({ error: 'Elige un mes válido o el lunes de la semana.' })
+      const choices = [
+        [day, day, '1 day', 'dia'],
+        [week, week, '7 days', 'semana'],
+        [month, `${month}-01`, '1 month', 'mes'],
+        [year, `${year}-01-01`, '1 year', 'anio']
+      ].filter(([value]) => value !== undefined)
+      const [value, start, duration, label] = choices[0] || []
+      if (choices.length !== 1 || typeof value !== 'string' || !validDate(start)
+          || (week !== undefined && new Date(start).getUTCDay() !== 1)) {
+        return res.status(400).json({ error: 'Selecciona un periodo válido para el reporte.' })
       }
 
       const leadTime = Number(days ?? 7)
@@ -192,7 +196,7 @@ module.exports = async (req, res) => {
       }
 
       const report = await transaction(async client => {
-        const data = await getReport(client, start, monthly)
+        const data = await getReport(client, start, duration)
         if (action === 'overview') {
           const products = await client.query(`
             SELECT p.id, p.model, p.flavor, p.stock, p.order_quantity, m.unit_cost,
@@ -200,7 +204,7 @@ module.exports = async (req, res) => {
                    greatest(0, ceil(coalesce(sum(s.units), 0) * $1::numeric / 28)
                      - p.stock)::int AS suggested
             FROM panel_products p
-            LEFT JOIN panel_sales s ON s.product_id = p.id
+            LEFT JOIN panel_sales s ON s.product_id = p.id AND s.cancelled_at IS NULL
               AND s.sold_on BETWEEN $2::date - 27 AND $2::date
             LEFT JOIN panel_model_costs m ON m.model_key = lower(btrim(p.model))
             GROUP BY p.id, m.unit_cost
@@ -211,7 +215,7 @@ module.exports = async (req, res) => {
         return data
       }, 'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY')
 
-      if (action === 'excel') return await sendExcel(res, start, monthly, report)
+      if (action === 'excel') return await sendExcel(res, `ventas-${label}-${value}`, report)
       return res.json(report)
     }
 
@@ -262,10 +266,27 @@ module.exports = async (req, res) => {
         : res.status(404).json({ error: 'Modelo no encontrado.' })
     }
 
+    if (action === 'cancel' && uuid(id)) {
+      const result = await pool.query(`
+        WITH cancelled AS (
+          UPDATE panel_sales SET cancelled_at = now()
+          WHERE id = $1 AND cancelled_at IS NULL
+          RETURNING product_id, units
+        )
+        UPDATE panel_products p SET stock = p.stock + cancelled.units
+        FROM cancelled WHERE p.id = cancelled.product_id
+      `, [id])
+
+      if (result.rowCount) return res.json({ ok: true })
+      const existing = await pool.query('SELECT 1 FROM panel_sales WHERE id = $1', [id])
+      return existing.rowCount
+        ? res.json({ ok: true, alreadyCancelled: true })
+        : res.status(404).json({ error: 'Venta no encontrada.' })
+    }
+
     if (action === 'sale' && productId(product) && validDate(date) && date <= today()
         && integer(units, 1, 1000000) && money(price) && paymentMethods.includes(payment)
-        && (expectedCost === null || money(expectedCost)) && typeof id === 'string'
-        && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id)) {
+        && (expectedCost === null || money(expectedCost)) && uuid(id)) {
       await transaction(async client => {
         const inserted = await client.query(`
           INSERT INTO panel_sales

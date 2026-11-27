@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <title>Panel de ventas | Rega</title>
-  <link rel="stylesheet" href="/admin/panel.css?v=reportes-1">
-  <script src="/admin/panel.js?v=reportes-1" defer></script>
+  <link rel="stylesheet" href="/admin/panel.css?v=periodos-1">
+  <script src="/admin/panel.js?v=periodos-1" defer></script>
 </head>
 <body>
   <header><div class="wrap"><h1>Ventas e inventario</h1></div></header>
@@ -42,12 +42,16 @@
       <form id="report">
         <label>Periodo
           <select name="period">
-            <option value="week">Semanal</option>
+            <option value="day">Diario</option>
+            <option value="week" selected>Semanal</option>
             <option value="month">Mensual</option>
+            <option value="year">Anual</option>
           </select>
         </label>
+        <label id="report-day" hidden>Día <input name="day" type="date" required disabled></label>
         <label id="report-week">Día de la semana <input name="week" type="date" required></label>
         <label id="report-month" hidden>Mes <input name="month" type="month" required disabled></label>
+        <label id="report-year" hidden>Año <input name="year" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required disabled></label>
         <button>Ver reporte</button>
         <a id="export" class="button" hidden>Descargar Excel</a>
       </form>
@@ -70,7 +74,7 @@
               <thead>
                 <tr>
                   <th>Fecha</th><th>Modelo</th><th>Sabor</th><th>Unidades</th>
-                  <th>Importe</th><th>Pago</th><th>Costo</th><th>Margen bruto</th>
+                  <th>Importe</th><th>Pago</th><th>Costo</th><th>Margen bruto</th><th>Acción</th>
                 </tr>
               </thead>
               <tbody id="sales"></tbody>
@@ -89,6 +93,8 @@
       <p>La sugerencia usa las ventas de los últimos 28 días, el plazo de entrega y el stock actual.
         Puedes cambiar la cantidad a pedir. Borra el campo para volver a la sugerencia.</p>
 
+      <label>Buscar en inventario <input id="stock-search" type="search" autocomplete="off"></label>
+      <p id="stock-results" aria-live="polite"></p>
       <div class="scroll">
         <table>
           <thead>

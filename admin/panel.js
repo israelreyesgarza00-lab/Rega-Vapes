@@ -5,6 +5,7 @@ const delivery = byId('delivery')
 const adjust = byId('adjust')
 const cost = byId('cost')
 const search = byId('sale-search')
+const stockSearch = byId('stock-search')
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Mexico_City' })
   .format(new Date())
@@ -26,21 +27,27 @@ function monday(value) {
 
 sale.elements.date.value = today
 sale.elements.date.max = today
-report.elements.week.value = monday(today)
-report.elements.month.value = today.slice(0, 7)
+function reportDate(date) {
+  report.elements.day.value = date
+  report.elements.week.value = monday(date)
+  report.elements.month.value = date.slice(0, 7)
+  report.elements.year.value = date.slice(0, 4)
+}
+
+reportDate(today)
 
 function activePeriod() {
-  return report.elements.period.value === 'month'
-    ? { month: report.elements.month.value }
-    : { week: monday(report.elements.week.value) }
+  const key = report.elements.period.value
+  const value = report.elements[key].value
+  return { [key]: key === 'week' ? monday(value) : value }
 }
 
 report.elements.period.addEventListener('change', () => {
-  const monthly = report.elements.period.value === 'month'
-  byId('report-month').hidden = !monthly
-  byId('report-week').hidden = monthly
-  report.elements.month.disabled = !monthly
-  report.elements.week.disabled = monthly
+  for (const key of ['day', 'week', 'month', 'year']) {
+    const active = key === report.elements.period.value
+    byId('report-' + key).hidden = !active
+    report.elements[key].disabled = !active
+  }
   report.requestSubmit()
 })
 
@@ -142,12 +149,19 @@ function fillOptions(form, options, label, placeholder = 'Selecciona un producto
   if (!form.dataset.saving) form.querySelector('button').disabled = !options.length
 }
 
-function fillSaleOptions() {
-  const words = searchKey(search.value).split(/\s+/).filter(Boolean)
-  const matches = products.filter(row =>
+function matchingProducts(value) {
+  const words = searchKey(value).split(/\s+/).filter(Boolean)
+  return products.filter(row =>
     words.every(word => searchKey(productLabel(row)).includes(word))
   )
+}
+
+function fillSaleOptions() {
+  const matches = matchingProducts(search.value)
   fillOptions(sale, matches, productLabel, matches.length ? 'Selecciona un producto' : 'Sin coincidencias')
+  if (search.value.trim() && matches.length === 1) {
+    sale.elements.product.value = String(matches[0].id)
+  }
   showSaleCost()
 }
 
@@ -159,6 +173,44 @@ search.addEventListener('input', fillSaleOptions)
 sale.elements.product.addEventListener('change', showSaleCost)
 sale.elements.price.addEventListener('input', showSaleCost)
 cost.elements.product.addEventListener('change', showModelCost)
+
+function renderInventory() {
+  const searchValue = stockSearch.value.trim()
+  const matches = searchValue ? matchingProducts(searchValue) : []
+  const visible = matches.slice(0, 50)
+  byId('stock-results').textContent = matches.length > visible.length
+    ? `Mostrando ${visible.length} de ${matches.length} resultados. Afina tu búsqueda.` : ''
+  renderRows('stock', visible.map(row => [
+    row.model, row.flavor, row.stock, row.recent_units, row.suggested, orderInput(row)
+  ]), searchValue ? 'Sin coincidencias.' : 'Escribe un modelo o sabor para ver el inventario.', 6)
+}
+
+stockSearch.addEventListener('input', renderInventory)
+
+function cancelButton(row) {
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.textContent = 'Anular'
+  button.setAttribute('aria-label', `Anular venta de ${row.model} / ${row.flavor} del ${row.date}`)
+  button.addEventListener('click', async () => {
+    if (!window.confirm(`¿Anular la venta de ${row.units} unidad(es) de ${row.model} / ${row.flavor}? Se devolverán al stock.`)) return
+    button.disabled = true
+    try {
+      await request('cancel', { id: row.id })
+    } catch (error) {
+      message(error.message, true)
+      button.disabled = false
+      return
+    }
+    message('Venta anulada. Se devolvieron las unidades al stock.')
+    try {
+      await refresh()
+    } catch {
+      message('Venta anulada. Recarga el panel para ver el stock actualizado.')
+    }
+  })
+  return button
+}
 
 async function refresh() {
   if (!report.reportValidity() || !delivery.reportValidity()) return
@@ -174,7 +226,8 @@ async function refresh() {
 
   const units = data.sales.reduce((sum, row) => sum + row.units, 0)
   const figures = data.balance
-  const title = period.month ? `Mes ${period.month}` : `Semana del ${period.week}`
+  const [key, value] = Object.entries(period)[0]
+  const title = `${{ day: 'Día', week: 'Semana del', month: 'Mes', year: 'Año' }[key]} ${value}`
   const missing = figures.missing_cost ? ` · ${figures.missing_cost} ventas sin costo registrado` : ''
   byId('summary').textContent =
     `${title} · ${units} unidades · Ventas ${currency.format(figures.revenue)} · ` +
@@ -188,13 +241,11 @@ async function refresh() {
     row.date, row.model, row.flavor, row.units, currency.format(row.total),
     row.payment_method ?? 'Sin registrar',
     row.cost_total == null ? '—' : currency.format(row.cost_total),
-    row.margin == null ? '—' : currency.format(row.margin)
-  ]), 'Aún no hay ventas en este periodo.', 8)
+    row.margin == null ? '—' : currency.format(row.margin), cancelButton(row)
+  ]), 'Aún no hay ventas en este periodo.', 9)
 
   products = data.products
-  renderRows('stock', products.map(row => [
-    row.model, row.flavor, row.stock, row.recent_units, row.suggested, orderInput(row)
-  ]), 'Agrega un producto para empezar.', 6)
+  renderInventory()
 
   fillSaleOptions()
   fillOptions(adjust, products, productLabel)
@@ -250,8 +301,7 @@ for (const [form, action, success] of [
       if (action === 'sale') {
         pendingSale = undefined
         form.elements.units.value = '1'
-        report.elements.week.value = monday(body.date)
-        report.elements.month.value = body.date.slice(0, 7)
+        reportDate(body.date)
       }
       if (action === 'product') form.reset()
       message(success)
