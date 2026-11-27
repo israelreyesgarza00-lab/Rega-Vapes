@@ -2,16 +2,14 @@ const { createHash, timingSafeEqual } = require('node:crypto')
 const { Pool } = require('pg')
 const Excel = require('exceljs')
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 3
-})
-
-const digest = value => createHash('sha256').update(value).digest()
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 3 })
+const paymentMethods = ['Transferencia', 'Efectivo', 'Tarjeta']
+const hash = value => createHash('sha256').update(value).digest()
 const integer = (value, min, max) =>
   Number.isInteger(value) && value >= min && value <= max
 const productId = value => /^\d{1,18}$/.test(String(value))
-const text = value =>
+const money = value => typeof value === 'string' && /^\d{1,10}(\.\d{1,2})?$/.test(value)
+const name = value =>
   typeof value === 'string' && value.trim().length > 0 && value.trim().length <= 100
 
 function validDate(value) {
@@ -41,41 +39,85 @@ async function transaction(work, begin = 'BEGIN') {
   }
 }
 
-async function weeklyReport(client, week) {
+async function getReport(client, start, monthly) {
+  const period = `
+    s.sold_on >= $1::date AND
+    s.sold_on < $1::date + CASE
+      WHEN $2::boolean THEN interval '1 month' ELSE interval '7 days'
+    END`
+  const params = [start, monthly]
+
   const sales = await client.query(`
     SELECT s.sold_on::text AS date, p.model, p.flavor, s.units,
-           s.unit_price, s.units * s.unit_price AS total
+           s.unit_price, s.units * s.unit_price AS total,
+           s.payment_method, s.unit_cost,
+           s.units * s.unit_cost AS cost_total,
+           s.units * (s.unit_price - s.unit_cost) AS margin
     FROM panel_sales s
     JOIN panel_products p ON p.id = s.product_id
-    WHERE s.sold_on >= $1::date AND s.sold_on < $1::date + 7
+    WHERE ${period}
     ORDER BY s.sold_on DESC, s.id
-  `, [week])
+  `, params)
 
   const ranking = await client.query(`
     SELECT min(p.flavor) AS flavor, sum(s.units)::int AS units
     FROM panel_sales s
     JOIN panel_products p ON p.id = s.product_id
-    WHERE s.sold_on >= $1::date AND s.sold_on < $1::date + 7
+    WHERE ${period}
     GROUP BY lower(p.flavor)
     ORDER BY units DESC, flavor
-  `, [week])
+  `, params)
 
-  return { sales: sales.rows, ranking: ranking.rows }
+  const balance = await client.query(`
+    SELECT coalesce(sum(s.units * s.unit_price), 0) AS revenue,
+           coalesce(sum(s.units * s.unit_cost), 0) AS recorded_cost,
+           coalesce(sum(s.units * (s.unit_price - s.unit_cost)), 0) AS recorded_margin,
+           count(*) FILTER (WHERE s.unit_cost IS NULL)::int AS missing_cost,
+           coalesce(sum(s.units * s.unit_price)
+             FILTER (WHERE s.unit_cost IS NULL), 0) AS revenue_without_cost
+    FROM panel_sales s
+    WHERE ${period}
+  `, params)
+
+  const payments = await client.query(`
+    SELECT coalesce(s.payment_method, 'Sin registrar') AS method,
+           sum(s.units * s.unit_price) AS total
+    FROM panel_sales s
+    WHERE ${period}
+    GROUP BY 1
+    ORDER BY 1
+  `, params)
+
+  return {
+    sales: sales.rows,
+    ranking: ranking.rows,
+    balance: balance.rows[0],
+    payments: payments.rows
+  }
 }
 
-async function sendExcel(res, week, report) {
+async function sendExcel(res, start, monthly, report) {
   const workbook = new Excel.Workbook()
+  const amount = value => value == null ? null : Number(value)
+  const format = '#,##0.00'
+
   const sales = workbook.addWorksheet('Ventas')
   sales.columns = [
     { header: 'Fecha', width: 14 },
     { header: 'Modelo', width: 28 },
     { header: 'Sabor', width: 30 },
     { header: 'Unidades', width: 13 },
-    { header: 'Precio unitario', width: 18, style: { numFmt: '#,##0.00' } },
-    { header: 'Importe', width: 18, style: { numFmt: '#,##0.00' } }
+    { header: 'Precio unitario', width: 18, style: { numFmt: format } },
+    { header: 'Importe', width: 18, style: { numFmt: format } },
+    { header: 'Método de pago', width: 20 },
+    ...['Costo unitario', 'Costo de venta', 'Margen bruto'].map(header => ({
+      header, width: 18, style: { numFmt: format }
+    }))
   ]
   sales.addRows(report.sales.map(row => [
-    row.date, row.model, row.flavor, row.units, Number(row.unit_price), Number(row.total)
+    row.date, row.model, row.flavor, row.units,
+    amount(row.unit_price), amount(row.total), row.payment_method ?? 'Sin registrar',
+    amount(row.unit_cost), amount(row.cost_total), amount(row.margin)
   ]))
 
   const ranking = workbook.addWorksheet('Ranking')
@@ -85,37 +127,63 @@ async function sendExcel(res, week, report) {
   ]
   ranking.addRows(report.ranking.map(row => [row.flavor, row.units]))
 
-  for (const sheet of [sales, ranking]) {
+  const balance = workbook.addWorksheet('Balance')
+  balance.columns = [
+    { header: 'Concepto', width: 45 },
+    { header: 'Valor', width: 20 }
+  ]
+  const figures = report.balance
+  balance.addRows([
+    ['Ventas totales', amount(figures.revenue)],
+    ['Costo de ventas con costo registrado', amount(figures.recorded_cost)],
+    ['Margen bruto de ventas con costo', amount(figures.recorded_margin)],
+    ['Ventas sin costo registrado', figures.missing_cost],
+    ['Importe de ventas sin costo registrado', amount(figures.revenue_without_cost)]
+  ])
+  for (const row of [2, 3, 4, 6]) balance.getCell(row, 2).numFmt = format
+
+  const payments = workbook.addWorksheet('Métodos de pago')
+  payments.columns = [
+    { header: 'Método', width: 24 },
+    { header: 'Importe', width: 20, style: { numFmt: format } }
+  ]
+  const totals = new Map(report.payments.map(row => [row.method, amount(row.total)]))
+  for (const method of [...paymentMethods, 'Sin registrar']) {
+    payments.addRow([method, totals.get(method) ?? 0])
+  }
+
+  for (const sheet of [sales, ranking, balance, payments]) {
     sheet.views = [{ state: 'frozen', ySplit: 1 }]
     sheet.getRow(1).font = { bold: true }
   }
 
+  const file = monthly ? `ventas-mes-${start.slice(0, 7)}` : `ventas-semana-${start}`
   const buffer = await workbook.xlsx.writeBuffer()
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-  res.setHeader('Content-Disposition', `attachment; filename="ventas-semana-${week}.xlsx"`)
+  res.setHeader('Content-Disposition', `attachment; filename="${file}.xlsx"`)
   return res.end(Buffer.from(buffer))
 }
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store')
   const password = process.env.PANEL_PASSWORD
-
   if (!password || !process.env.DATABASE_URL) {
     return res.status(503).json({ error: 'Faltan las variables del panel en Vercel.' })
   }
 
   const expected = 'Basic ' + Buffer.from('admin:' + password).toString('base64')
-  if (!timingSafeEqual(digest(req.headers.authorization || ''), digest(expected))) {
+  if (!timingSafeEqual(hash(req.headers.authorization || ''), hash(expected))) {
     res.setHeader('WWW-Authenticate', 'Basic realm="Panel Rega", charset="UTF-8"')
     return res.status(401).json({ error: 'Acceso privado.' })
   }
 
-  const { action, week, days } = req.query
-
+  const { action, week, month, days } = req.query
   try {
     if (req.method === 'GET' && ['overview', 'excel'].includes(action)) {
-      if (!validDate(week) || new Date(week).getUTCDay() !== 1) {
-        return res.status(400).json({ error: 'Selecciona un lunes para el reporte.' })
+      const monthly = month !== undefined
+      const start = monthly ? `${month}-01` : week
+      if (!validDate(start) || (!monthly && new Date(start).getUTCDay() !== 1)) {
+        return res.status(400).json({ error: 'Elige un mes válido o el lunes de la semana.' })
       }
 
       const leadTime = Number(days ?? 7)
@@ -124,26 +192,26 @@ module.exports = async (req, res) => {
       }
 
       const report = await transaction(async client => {
-        const result = await weeklyReport(client, week)
+        const data = await getReport(client, start, monthly)
         if (action === 'overview') {
           const products = await client.query(`
-            SELECT p.id, p.model, p.flavor, p.stock, p.order_quantity,
+            SELECT p.id, p.model, p.flavor, p.stock, p.order_quantity, m.unit_cost,
                    coalesce(sum(s.units), 0)::int AS recent_units,
-                   greatest(
-                     0, ceil(coalesce(sum(s.units), 0) * $1::numeric / 28) - p.stock
-                   )::int AS suggested
+                   greatest(0, ceil(coalesce(sum(s.units), 0) * $1::numeric / 28)
+                     - p.stock)::int AS suggested
             FROM panel_products p
             LEFT JOIN panel_sales s ON s.product_id = p.id
               AND s.sold_on BETWEEN $2::date - 27 AND $2::date
-            GROUP BY p.id
+            LEFT JOIN panel_model_costs m ON m.model_key = lower(btrim(p.model))
+            GROUP BY p.id, m.unit_cost
             ORDER BY suggested DESC, p.model, p.flavor
           `, [leadTime, today()])
-          result.products = products.rows
+          data.products = products.rows
         }
-        return result
+        return data
       }, 'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY')
 
-      if (action === 'excel') return sendExcel(res, week, report)
+      if (action === 'excel') return await sendExcel(res, start, monthly, report)
       return res.json(report)
     }
 
@@ -151,9 +219,12 @@ module.exports = async (req, res) => {
       return res.status(405).json({ error: 'Operación no disponible.' })
     }
 
-    const { id, product, model, flavor, stock, quantity, date, units, price } = req.body || {}
+    const {
+      id, product, model, flavor, stock, quantity, date, units, price,
+      cost, payment, expectedCost
+    } = req.body || {}
 
-    if (action === 'product' && text(model) && text(flavor) && integer(stock, 0, 1000000)) {
+    if (action === 'product' && name(model) && name(flavor) && integer(stock, 0, 1000000)) {
       await pool.query(
         'INSERT INTO panel_products (model, flavor, stock) VALUES ($1, $2, $3)',
         [model.trim(), flavor.trim(), stock]
@@ -173,39 +244,59 @@ module.exports = async (req, res) => {
     if (action === 'order' && productId(product)
         && (quantity === null || integer(quantity, 0, 1000000))) {
       const result = await pool.query(
-        'UPDATE panel_products SET order_quantity = $2 WHERE id = $1',
-        [product, quantity]
+        'UPDATE panel_products SET order_quantity = $2 WHERE id = $1', [product, quantity]
       )
       return result.rowCount
         ? res.json({ ok: true })
         : res.status(404).json({ error: 'Producto no encontrado.' })
     }
 
+    if (action === 'cost' && productId(product) && money(cost)) {
+      const result = await pool.query(`
+        INSERT INTO panel_model_costs (model_key, unit_cost)
+        SELECT lower(btrim(model)), $2::numeric FROM panel_products WHERE id = $1
+        ON CONFLICT (model_key) DO UPDATE SET unit_cost = excluded.unit_cost
+      `, [product, cost])
+      return result.rowCount
+        ? res.json({ ok: true })
+        : res.status(404).json({ error: 'Modelo no encontrado.' })
+    }
+
     if (action === 'sale' && productId(product) && validDate(date) && date <= today()
-        && integer(units, 1, 1000000)
-        && typeof price === 'string' && /^\d{1,10}(\.\d{1,2})?$/.test(price)
-        && typeof id === 'string'
+        && integer(units, 1, 1000000) && money(price) && paymentMethods.includes(payment)
+        && (expectedCost === null || money(expectedCost)) && typeof id === 'string'
         && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id)) {
       await transaction(async client => {
         const inserted = await client.query(`
-          INSERT INTO panel_sales (id, sold_on, product_id, units, unit_price)
-          VALUES ($1, $2, $3, $4, $5)
+          INSERT INTO panel_sales
+            (id, sold_on, product_id, units, unit_price, unit_cost, payment_method)
+          SELECT $1, $2, p.id, $4, $5, m.unit_cost, $6
+          FROM panel_products p
+          LEFT JOIN panel_model_costs m ON m.model_key = lower(btrim(p.model))
+          WHERE p.id = $3 AND m.unit_cost IS NOT DISTINCT FROM $7::numeric
           ON CONFLICT (id) DO NOTHING RETURNING id
-        `, [id, date, product, units, price])
+        `, [id, date, product, units, price, payment, expectedCost])
 
-        if (inserted.rowCount) {
-          const updated = await client.query(`
-            UPDATE panel_products SET stock = stock - $2
-            WHERE id = $1 AND stock >= $2
-          `, [product, units])
-          if (!updated.rowCount) throw Object.assign(new Error(), { code: 'LOW_STOCK' })
+        if (!inserted.rowCount) {
+          const prior = await client.query('SELECT 1 FROM panel_sales WHERE id = $1', [id])
+          if (!prior.rowCount) throw Object.assign(new Error(), { code: 'COST_CHANGED' })
+          return
         }
+
+        const updated = await client.query(`
+          UPDATE panel_products SET stock = stock - $2
+          WHERE id = $1 AND stock >= $2
+        `, [product, units])
+        if (!updated.rowCount) throw Object.assign(new Error(), { code: 'LOW_STOCK' })
       })
       return res.status(201).json({ ok: true })
     }
 
     return res.status(400).json({ error: 'Revisa los datos ingresados.' })
   } catch (error) {
+    if (error.code === 'COST_CHANGED') {
+      return res.status(409).json({ error: 'Cambió el costo o el producto. Recarga el panel antes de guardar.' })
+    }
     if (error.code === 'LOW_STOCK') {
       return res.status(409).json({ error: 'Las unidades superan el stock disponible.' })
     }
